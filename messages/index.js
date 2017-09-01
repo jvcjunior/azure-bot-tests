@@ -1,5 +1,6 @@
 var restify = require('restify');
 var builder = require('botbuilder');
+var moment = require('moment');
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -51,26 +52,68 @@ bot.dialog('Cumprimentos.Iniciais', [
             session.conversationData.alreadyStarted = true;
             session.beginDialog('Reservar');
         }
-        //builder.Prompts.text(session, `Olá. Seja bem-vindo! Meu nome é Rhinos. Posso saber o seu nome?`);
     }
 ]).triggerAction({
     matches: 'Cumprimentos.Iniciais'
 });
 
 bot.dialog('Reservar', [
-    function(session) {
-        session.beginDialog('DataInicial');
+    function(session, args, next) {
+        if (session.conversationData.dataInicial) {
+            next();
+        } else {
+            session.beginDialog('DataInicial');
+        }
     },
     function(session, results, next) {
-        session.beginDialog('DataFinal');
-    },
-    function(session, results, next) {
-        session.beginDialog('ConfirmaDados');
+        if (session.conversationData.dataFinal) {
+            next();
+        } else {
+            session.beginDialog('DataFinal');
+        }
+
     },
     function(session, results, next) {
         session.send('Verificando dados....');
+        setTimeout(() => {
+            var dataIni = moment(session.conversationData.dataInicial);
+            var dataFin = moment(session.conversationData.dataFinal);
+
+            // var welcomeCard = new builder.HeroCard(session)
+            // .title('Confirmação')
+            // .subtitle('Por favor confirme os dados abaixo')
+            // .buttons([
+            //     builder.CardAction.imBack(session, session.gettext(MainOptions.Shop), MainOptions.Shop),
+            //     builder.CardAction.imBack(session, session.gettext(MainOptions.Support), MainOptions.Support)
+            // ]);
+
+            // session.send(new builder.Message(session)
+            // .addAttachment(welcomeCard));
+            const card = new builder.ThumbnailCard(session);
+            card.buttons([
+                new builder.CardAction(session).title('Sim').value('Add').type('imBack'),
+                new builder.CardAction(session).title('Não').value('Help').type('imBack'),
+            ]).text(`Confirma os dados?`);
+
+            const message = new builder.Message(session);
+            message.addAttachment(card);
+            session.send(message);
+
+        }, 5000);
     },
 ]);
+
+bot.dialog('AddNumber', [
+    (session, args, next) => {
+        session.send('AEEE');
+    },
+]).triggerAction({matches: /^add$/i});
+
+bot.dialog('AddNumber2', [
+    (session, args, next) => {
+        session.send('OWWW');
+    },
+]).triggerAction({matches: /^help$/i});
 
 bot.dialog('DataInicial', [
     function(session, args) {
